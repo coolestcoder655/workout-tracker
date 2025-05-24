@@ -9,17 +9,28 @@ import {
 import { auth } from "../../firebase";
 import "../App.css";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 function HomePage() {
-  const [password, setPasscode] = useState("");
-  const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [authError, setAuthError] = useState<String | null>(null);
-  const [validated, setValidated] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const {
+    password,
+    setPasscode,
+    email,
+    setEmail,
+    emailError,
+    setEmailError,
+    passwordError,
+    setPasswordError,
+    authError,
+    setAuthError,
+    validated,
+    setValidated,
+    loggedIn,
+    setLoggedIn,
+    user,
+    setUser,
+  } = useAuth();
 
   const validateEmail = (email: string) => {
     // Basic email regex: must have @, ., and a valid ending
