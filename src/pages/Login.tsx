@@ -1,7 +1,6 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import type { User } from "firebase/auth";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -11,8 +10,10 @@ import "../App.css";
 
 import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-function HomePage() {
+function LoginPage() {
+  const navigate = useNavigate();
   const {
     password,
     setPasscode,
@@ -70,14 +71,6 @@ function HomePage() {
     document.cookie = newCookie;
   };
 
-  const handleLogout = () => {
-    resetLoginCookies();
-    setPasscode("");
-    setEmail("");
-    setLoggedIn(false);
-    setUser(null);
-  };
-
   const loginEmailandPassword = async () => {
     await signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
@@ -95,7 +88,7 @@ function HomePage() {
       });
   };
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     let valid = true;
     setEmailError("");
@@ -111,11 +104,14 @@ function HomePage() {
     }
     setValidated(true);
     if (valid) {
-      loginEmailandPassword();
+      await loginEmailandPassword();
+      if (authError === null) {
+        navigate("/dashboard");
+      }
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
     let valid = true;
     setEmailError("");
@@ -138,22 +134,22 @@ function HomePage() {
       const createUserEmailAndPassword = async () => {
         await createUserWithEmailAndPassword(auth, email, password)
           .then((userCredential) => {
-            // Signed in
             setUser(userCredential.user);
             setLoggedIn(true);
-
             console.log("User logged in:", user);
           })
           .catch((error) => {
             const errorCode = error.code;
             const errorMessage = error.message;
             console.error("Error signing in:", errorCode, errorMessage);
-
             setAuthError("Invalid email or password. || " + errorMessage);
           });
       };
 
-      createUserEmailAndPassword();
+      await createUserEmailAndPassword();
+      if (authError === null) {
+        navigate("/dashboard");
+      }
     }
   };
 
@@ -279,4 +275,4 @@ function HomePage() {
   );
 }
 
-export default HomePage;
+export default LoginPage;
