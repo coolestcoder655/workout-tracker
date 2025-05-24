@@ -23,7 +23,9 @@ export type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [password, setPasscode] = useState("");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
