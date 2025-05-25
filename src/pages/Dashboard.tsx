@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Calendar2Check,
   HeartPulse,
@@ -9,6 +9,7 @@ import {
   Trophy,
   MoonStars,
 } from "react-bootstrap-icons";
+import { useNavigate } from "react-router-dom";
 
 const DashboardButtons = () => {
   const handleClick = (menu: string) => alert(`Open ${menu} menu`);
@@ -66,9 +67,9 @@ const DashboardButtons = () => {
 };
 
 const Dashboard = () => {
-  const { user } = useAuth();
   const [showWeeklyCalories, setShowWeeklyCalories] = useState(false);
-  const [dailyCalories, setDailyCalories] = useState(480);
+  const [dailyCalories, _] = useState(480);
+  const navigate = useNavigate();
   const splashTexts: string[] = [
     "Your Fitness Hub",
     "Today’s Game Plan",
@@ -103,6 +104,16 @@ const Dashboard = () => {
   const randomSplashText =
     splashTexts[Math.floor(Math.random() * splashTexts.length)];
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuthenticated = await useAuth();
+      if (!isAuthenticated) {
+        navigate("/");
+      }
+    };
+    checkAuth();
+  }, []);
+
   return (
     <>
       <div className="text-center mb-8">
@@ -133,6 +144,31 @@ const Dashboard = () => {
             </button>
             <button className="text-blue-600 border border-blue-600 px-4 py-2 rounded hover:bg-blue-50 transition">
               Swap / Reschedule
+            </button>
+          </div>
+        </div>
+
+        {/* Section 1: Workout of the Day */}
+        <div className="col-span-2 md:col-span-2 row-span-1 bg-white rounded-lg shadow p-6 flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              New Workout
+            </h2>
+            <p className="text-lg text-gray-800 mb-1">
+              Create or view your workout plans
+            </p>
+          </div>
+          <div className="mt-4 flex gap-4">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              onClick={() => {
+                navigate("/newWorkout");
+              }}
+            >
+              Create New Workout Plan
+            </button>
+            <button className="text-blue-600 border border-blue-600 px-4 py-2 rounded hover:bg-blue-50 transition">
+              View Workout Plans
             </button>
           </div>
         </div>
