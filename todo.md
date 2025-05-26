@@ -3,4 +3,4 @@
 3. Implement Logic for Galleries
 4. Fix Title and Subtitle
 5. Add Sleep Gallery Item
-6. Implement Firestore Storage
+6. Implement Firestore Storage For New Workout

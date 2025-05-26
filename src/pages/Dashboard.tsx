@@ -12,6 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 const DashboardButtons = () => {
+  // const navigate = useNavigate();
   const handleClick = (menu: string) => alert(`Open ${menu} menu`);
 
   return (

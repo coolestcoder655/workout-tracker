@@ -1,7 +1,17 @@
 import { useState } from "react";
-import { Fire, Trash } from "react-bootstrap-icons";
+import {
+  Fire,
+  Trash,
+  Icon1Circle,
+  Icon2Circle,
+  House,
+} from "react-bootstrap-icons";
 import { Modal } from "react-bootstrap";
 import { ExerciseData } from "../workouts";
+import { useNavigate } from "react-router-dom";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../firebase";
+import { useAuth } from "../context/AuthContext";
 
 const API_KEY = "V8b7TJIWiE7+Co1M4wo8LQ==BCVPwsFhjAiJN6zi";
 const BASE_URL = "https://api.api-ninjas.com/v1/caloriesburned?activity=";
@@ -38,23 +48,27 @@ getExerciseNames("run").then((names) => {
   names.forEach((name) => console.log(name));
 });
 
-const options = [
-  "Canada",
-  "Cancún",
-  "California",
-  "Cameroon",
-  "Cambodia",
-  "Cape Town",
-  "Cairo",
-  "Chicago",
-  "Czech Republic",
-  "China",
-];
-
 const NewWorkout = () => {
+  const { user } = useAuth();
   const [exercises, setExercises] = useState(ExerciseData.custom);
   const [selectedWorkoutType, setSelectedWorkoutType] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [formSubmitError, setFormSubmitError] = useState(false);
+  const [errorLoggingWorkout, setErrorLoggingWorkout] = useState(false);
+  const [modalExercise, setModalExercise] = useState<string>("");
+  const [modalDuration, setModalDuration] = useState<number>(0);
+  const [modalCalories, setModalCalories] = useState<number | null>(null);
+  const [caloriesLoading, setCaloriesLoading] = useState(false);
+  const [modalDropdownOptions, setModalDropdownOptions] = useState<string[]>(
+    []
+  );
+  const [modalShowDropdown, setModalShowDropdown] = useState(false);
+  const navigate = useNavigate();
+
+  const toggleUserError = () => {
+    alert("You must be logged in to log a workout.");
+    navigate("/");
+  };
 
   const handleRemoveExercise = (id: number) => {
     setSelectedWorkoutType("custom");
@@ -63,6 +77,67 @@ const NewWorkout = () => {
     setExercises((prevExercises) =>
       prevExercises.filter((exercise) => exercise.id !== id)
     );
+  };
+
+  const handleClearAddExercise = () => {
+    handleModalExerciseChange("");
+    handleModalDurationChange(0);
+    setShowModal(false);
+  };
+
+  const handleLogWorkout = () => {
+    // Form Validation
+    if (selectedWorkoutType === "" || exercises.length == 0) {
+      // Make it so that if exercises are empty, show error
+      setFormSubmitError(true);
+      return;
+    }
+
+    const today = new Date();
+    const dateWithoutTime = today.toLocaleDateString();
+    const duration = exercises.reduce(
+      (total, exercise) => total + exercise.duration,
+      0
+    );
+    const totalCaloriesBurned = exercises.reduce(
+      (total, exercise) => total + exercise.caloriesBurned,
+      0
+    );
+
+    const workoutData = {
+      type: selectedWorkoutType,
+      date: dateWithoutTime,
+      duration: duration,
+      totalCaloriesBurned: totalCaloriesBurned,
+      exercises: exercises.map((exercise) => ({
+        name: exercise.title,
+        duration: exercise.duration,
+        caloriesBurned: exercise.caloriesBurned,
+      })),
+    };
+
+    if (user === null) {
+      toggleUserError();
+      return;
+    }
+
+    // Save to Firestore
+    const workoutsCollection = collection(db, "users", user, "workouts");
+
+    const logWorkout = async () => {
+      try {
+        await addDoc(workoutsCollection, workoutData);
+        console.log("Workout logged successfully!");
+      } catch (error) {
+        setErrorLoggingWorkout(true);
+      }
+    };
+
+    logWorkout();
+
+    setExercises([]);
+    setSelectedWorkoutType("");
+    navigate("/dashboard");
   };
 
   const handleAddExercise = (
@@ -86,16 +161,6 @@ const NewWorkout = () => {
     setSelectedWorkoutType(type);
     setExercises([...ExerciseData[type]]);
   };
-
-  // --- Replace modal state and logic ---
-  const [modalExercise, setModalExercise] = useState<string>("");
-  const [modalDuration, setModalDuration] = useState<number>(0);
-  const [modalCalories, setModalCalories] = useState<number | null>(null);
-  const [caloriesLoading, setCaloriesLoading] = useState(false);
-  const [modalDropdownOptions, setModalDropdownOptions] = useState<string[]>(
-    []
-  );
-  const [modalShowDropdown, setModalShowDropdown] = useState(false);
 
   // Fetch exercise names for dropdown as user types
   const handleModalExerciseChange = async (val: string) => {
@@ -176,6 +241,14 @@ const NewWorkout = () => {
         Generate New Workout
       </h1>
 
+      <button
+        className="position-absolute top-0 end-0 m-3 d-flex flex-row align-items-center gap-3 btn btn-outline-secondary text-center"
+        onClick={() => navigate("/dashboard")}
+      >
+        <span className="text-gray-600">Back to Dashboard</span>
+        <House className="text-gray-600" size={24} />
+      </button>
+
       <select
         className="m-4 p-2 border border-gray-300 rounded"
         value={selectedWorkoutType}
@@ -195,49 +268,59 @@ const NewWorkout = () => {
         <option value="custom">Custom Workout</option>
       </select>
 
-      <ul className="list-group m-4 p-2 border border-gray-300 rounded">
-        {exercises.map((exercise) => (
-          <li
-            key={exercise.id}
-            className="list-group-item flex items-center justify-between"
-            style={{ minHeight: "100px" }}
-          >
-            <div>
-              <h1 className="text-lg text-blue-400 font-bold">
-                {exercise.title}
-              </h1>
-              <p className="text-md text-gray-600">
-                <strong>Duration: </strong>
-                {exercise.duration} minutes
-              </p>
-              <p className="text-md text-gray-600">
-                <strong>Calories Burned: </strong>
-                {exercise.caloriesBurned} kcal
-                <Fire className="inline-block ml-1" color="red" />
-              </p>
-            </div>
-            <div
-              className="flex items-center justify-end"
-              style={{ minWidth: "150px" }}
+      {exercises.length >= 1 && (
+        <ul className="list-group m-4 p-2 border border-gray-300 rounded">
+          {exercises.map((exercise) => (
+            <li
+              key={exercise.id}
+              className="list-group-item flex items-center justify-between"
+              style={{ minHeight: "100px" }}
             >
-              <button
-                className="btn btn-danger px-6 py-3 text-lg"
-                onClick={() => handleRemoveExercise(exercise.id)}
+              <div>
+                <h1 className="text-lg text-blue-400 font-bold">
+                  {exercise.title}
+                </h1>
+                <p className="text-md text-gray-600">
+                  <strong>Duration: </strong>
+                  {exercise.duration} minutes
+                </p>
+                <p className="text-md text-gray-600">
+                  <strong>Calories Burned: </strong>
+                  {exercise.caloriesBurned} kcal
+                  <Fire className="inline-block ml-1" color="red" />
+                </p>
+              </div>
+              <div
+                className="flex items-center justify-end"
+                style={{ minWidth: "150px" }}
               >
-                <Trash size={28} />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+                <button
+                  className="btn btn-danger px-6 py-3 text-lg"
+                  onClick={() => handleRemoveExercise(exercise.id)}
+                >
+                  <Trash size={28} />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex justify-end m-5">
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           Add New Exercise
         </button>
       </div>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
+      {exercises.length !== 0 && (
+        <div className="flex justify-center m-5">
+          <button className="btn btn-outline-dark" onClick={handleLogWorkout}>
+            Submit
+          </button>
+        </div>
+      )}
+
+      <Modal show={showModal} onHide={handleClearAddExercise} centered>
+        <Modal.Header>
           <Modal.Title>Add New Exercise</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -297,7 +380,7 @@ const NewWorkout = () => {
         <Modal.Footer>
           <button
             className="btn btn-secondary"
-            onClick={() => setShowModal(false)}
+            onClick={handleClearAddExercise}
           >
             Cancel
           </button>
@@ -325,6 +408,80 @@ const NewWorkout = () => {
           </button>
         </Modal.Footer>
       </Modal>
+
+      <Modal
+        show={formSubmitError}
+        onHide={() => setFormSubmitError(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <span className="text-red-500">Form Submission Error</span>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-red-500">
+            <p>
+              <strong>One or more parts</strong> of the form has
+              <strong> not been filled</strong>. Please make sure one of
+              following fields are filled:
+            </p>
+            <ul>
+              <li className="text-red-500 d-flex mb-0.5">
+                <Icon1Circle className="mr-0.5" />
+                <strong>
+                  <p> - Preset Exercise Has Been Selected</p>
+                </strong>
+              </li>
+              <li className="text-red-500 d-flex">
+                <Icon2Circle className="mr-0.5" />
+                <p>
+                  <strong>- Exercise Has Been Added To A Custom Workout</strong>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <button
+            className="btn btn-primary"
+            onClick={() => setFormSubmitError(false)}
+          >
+            Understood
+          </button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={errorLoggingWorkout}
+        onHide={() => setErrorLoggingWorkout(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Error Logging Workout</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-red-500">
+            There was an error logging your workout. Please try again later.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <button
+            className="btn btn-primary"
+            onClick={() => setErrorLoggingWorkout(false)}
+          >
+            Close
+          </button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* {<div className="text-center text-gray-500 mt-8">
+        <p>
+          <strong>Note:</strong> This is a custom workout generator. You can
+          select a workout type and add exercises to create your own workout
+          routine.
+        </p>
+      </div>} */}
     </>
   );
 };

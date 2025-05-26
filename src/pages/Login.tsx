@@ -75,7 +75,7 @@ function LoginPage() {
     await signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in
-        setUser(userCredential.user);
+        setUser(userCredential.user.email);
         setLoggedIn(true);
         createCookie(email, password);
         console.log("User logged in:", user);
@@ -84,7 +84,7 @@ function LoginPage() {
         const errorCode = error.code;
         const errorMessage = error.message;
         console.error("Error signing in:", errorCode, errorMessage);
-        setAuthError("Invalid email or password. || " + errorMessage);
+        setAuthError("Invalid email or password. | " + errorMessage);
       });
   };
 
@@ -106,6 +106,7 @@ function LoginPage() {
     if (valid) {
       await loginEmailandPassword();
       if (authError === null) {
+        createCookie(email, password);
         navigate("/dashboard");
       }
     }
@@ -134,8 +135,9 @@ function LoginPage() {
       const createUserEmailAndPassword = async () => {
         await createUserWithEmailAndPassword(auth, email, password)
           .then((userCredential) => {
-            setUser(userCredential.user);
+            setUser(userCredential.user.email);
             setLoggedIn(true);
+            createCookie(email, password);
             console.log("User logged in:", user);
           })
           .catch((error) => {
@@ -163,7 +165,7 @@ function LoginPage() {
       if (!loggedIn) {
         signInWithEmailAndPassword(auth, cookieEmail, cookiePassword)
           .then((userCredential) => {
-            setUser(userCredential.user);
+            setUser(userCredential.user.email);
             setLoggedIn(true);
           })
           .catch((_) => {

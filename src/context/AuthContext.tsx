@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from "react";
-import type { User } from "firebase/auth";
 
 // Define the context type
 export type AuthContextType = {
@@ -17,8 +16,8 @@ export type AuthContextType = {
   setValidated: React.Dispatch<React.SetStateAction<boolean>>;
   loggedIn: boolean;
   setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  user: String | null;
+  setUser: React.Dispatch<React.SetStateAction<String | null>>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [authError, setAuthError] = useState<string | null>(null);
   const [validated, setValidated] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<String | null>(null);
 
   return (
     <AuthContext.Provider
